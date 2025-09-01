@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import { Server } from './server';
+
+// Load environment variables
+dotenv.config();
 
 export class EcommerceApplication {
   public run(): void {
