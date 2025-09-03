@@ -9,5 +9,6 @@ const authRouter = express.Router();
 authRouter.post('/signup', validateSchema(signUpSchema), asyncWrapper(authController.signUp));
 authRouter.post('/signin', validateSchema(signInSchema), asyncWrapper(authController.signIn));
 authRouter.post('/forgot-password', asyncWrapper(authController.forgotPassword));
+authRouter.post('/reset-password', asyncWrapper(authController.resetPassword));
 
 export default authRouter;

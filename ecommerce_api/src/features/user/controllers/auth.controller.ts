@@ -7,6 +7,10 @@ import crypto from 'crypto';
 import sendTokenViaCookie from '~/globals/helpers/cookie.helper';
 import { generateToken } from '~/globals/helpers/jwt.helper';
 import HttpConstants from '~/globals/constants/http.constants';
+import { EMAIL_TYPES, sendInviteEmail } from '~/globals/config/email';
+
+// Get JWT secret from environment or use a fallback
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-in-production';
 
 class AuthController {
   public getAll(req: Request, res: Response, next: NextFunction) {
@@ -109,13 +113,42 @@ class AuthController {
       const generatePassword = crypto.randomBytes(8).toString('hex');
       const hashedPassword = await bcrypt.hash(generatePassword, 10);
 
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+      const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
 
       // UPDATE PASSWORD
       await User.findByIdAndUpdate(user._id, { password: hashedPassword });
 
       res.status(HttpConstants.SUCCESS).json({
         message: 'Forgot password sent successfully',
+        data: user,
+        token
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // RESET PASSWORD
+  public async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) {
+        return next(new BadRequestException('User not found'));
+      }
+      const token = jwt.sign(
+        { id: user._id, name: user.name, email: user.email, fullName: user.fullName },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      await sendInviteEmail(email, {
+        subject: 'Reset Password',
+        data: { user, token },
+        typeEmail: EMAIL_TYPES.PASSWORD_RESET
+      });
+      res.status(HttpConstants.SUCCESS).json({
+        message: 'Reset password sent successfully',
         data: user,
         token
       });

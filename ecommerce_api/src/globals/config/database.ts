@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 function setupMongoDB() {
   mongoose
-    .connect('mongodb://localhost:27017/ecommerce_api', {
+    .connect(process.env.MONGODB_URI as string, {
       serverSelectionTimeoutMS: 5000
     })
     .then(() => console.log('MongoDB connected'))
